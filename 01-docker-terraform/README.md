@@ -113,3 +113,31 @@ because when I run `pd.io.get_schema(df, name="yellow_tripdata_2024-01.parquet")
 
 The rest of the code that takes the data from the CSV file and inserts
 it into the database is in the [Upload Data.ipynb](./Upload%20Data.ipynb) notebook.
+
+## Connecting pgAdmin and Postgres
+
+I already have _pgAdmin_ installed on my machine. No need to run it through docker. But here's the command anyway.
+
+```bash
+docker run -it \
+  -e PGADMIN_DEFAULT_EMAIL="admin@admin.com" \
+  -e PGADMIN_DEFAULT_PASSWORD="password" \
+  -p 5050:80 \
+  dpage/pgadmin4
+```
+
+If I were to run pgAdmin inside a container, I would not be able to access the database from another container.
+To be able to connect, we need to link them somehow. _They should be in one network_.
+
+```bash
+# create a network
+docker network create pg-network
+
+# then use the network while running the containers
+docker run -it \
+  # specify the network
+  --network=pg-network \
+  # specify the name
+  --name
+  ...
+```
