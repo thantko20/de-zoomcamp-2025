@@ -85,10 +85,12 @@ We use `-p` flag to map the port.
 
 ```bash
 docker run -it \
+  --network=pg-network \
+  --name postgres-db \
   -e POSTGRES_USER="postgres" \
   -e POSTGRES_PASSWORD="password" \
   -e POSTGRES_DB="ny_taxi" \
-  -v $(pwd)/ny_taxi_postgres_data:/var/lib/postgresql/data \
+  -v /home/thantko/postgres_data:/var/lib/postgresql/data \
   -p 5433:5432 \
   postgres:13
 ```
@@ -112,7 +114,7 @@ Alexy used `pd.to_datetime(df.tpep_pickup_datetime)` to convert the date column 
 because when I run `pd.io.get_schema(df, name="yellow_tripdata_2024-01.parquet")`, I get the correct `TIMESTAMP` data type.
 
 The rest of the code that takes the data from the CSV file and inserts
-it into the database is in the [Upload Data.ipynb](./Upload%20Data.ipynb) notebook.
+it into the database is in the [Upload Data.ipynb](./upload-data.ipynb) notebook.
 
 ## Connecting pgAdmin and Postgres
 
@@ -129,6 +131,9 @@ docker run -it \
 If I were to run pgAdmin inside a container, I would not be able to access the database from another container.
 To be able to connect, we need to link them somehow. _They should be in one network_.
 
+While establishing the communication between the containers, specify the network. I do not need to connect to the port exposed
+to the host machine. I need to use the internal port of the container. For example, for `5433:5432`, i need to use `5432` as the port.
+
 ```bash
 # create a network
 docker network create pg-network
@@ -141,3 +146,54 @@ docker run -it \
   --name
   ...
 ```
+
+## Putting Ingestion Script into Docker
+
+Convert Jupyter Notebook into a Python script
+
+```base
+jupyter nbconvert --to=script upload-data.ipynb
+```
+
+`argparse` library to parse cli arguments like db user, pw, host, .csv path, etc.
+
+use `__main__` to run the script.
+
+yellow taxi data 2021 - https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz
+
+Command to execute [ingest-data.py](./ingest-data.py)
+
+```bash
+URL=https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz
+python3 ingest-data.py \
+  --user=postgres \
+  --password=password \
+  --host=localhost \
+  --port=5433 \
+  --db=ny_taxi \
+  --table-name=yellow_taxi_trips \
+  --url=$URL
+```
+
+And dockerize the script!
+
+Updated docker command to run the container.
+
+```bash
+docker build -t taxi_ingest:v001 .
+
+URL=https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz
+docker run -it \
+  --network=pg-network \
+  taxi_ingest:v001 \
+  --user=postgres \
+  --password=password \
+  --host=postgres-db \
+  --port=5432 \
+  --db=ny_taxi \
+  --table-name=yellow_taxi_trips \
+  --url=$URL
+```
+
+The `run` command also has to be run within a network because pg from another container is not accessible from
+`taxi_ingest` container. So, I run both pg container and `taxi_ingest` container within `pg-network`.
