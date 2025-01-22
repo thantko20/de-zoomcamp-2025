@@ -177,7 +177,7 @@ python3 ingest-data.py \
 
 And dockerize the script!
 
-Updated docker command to run the container.
+Updated docker command to run the container. [Dockerfile](./Dockerfile)
 
 ```bash
 docker build -t taxi_ingest:v001 .
@@ -197,3 +197,53 @@ docker run -it \
 
 The `run` command also has to be run within a network because pg from another container is not accessible from
 `taxi_ingest` container. So, I run both pg container and `taxi_ingest` container within `pg-network`.
+
+## Running Postgres and pgAdmin with Docker-Compose
+
+Instead of running separate commands to run different containers, we can define them in a YAML file called `docker-compose.yml`.
+
+[docker-compose.yml](./docker-compose.yml)
+
+`docker compose up -d` to run the containers. `-d` = detach mode (from terminal; running in the background)
+
+`docker compose down` to shut them down.
+
+## SQL Refresher
+
+Aleady knew some of the basics of SQL :D.
+
+## Introduction to GCP
+
+Cloud computing services offered by Google. Compute, storage..
+
+We are going to use **Big Data**.
+
+## Terraform
+
+literal definition - the process of creating conditions where life can survive
+software def - taking platforms like AWS, and GCP and set up infra
+
+From Hashicorp - https://developer.hashicorp.com/terraform/intro
+
+> HashiCorp Terraform is an **infrastructure as code** tool that lets you define both cloud and on-prem resources in human-readable configuration files
+> that you can version, reuse, and share. You can then use a consistent workflow to provision and manage all of your infrastructure throughout its lifecycle.
+> Terraform can manage low-level components like compute, storage, and networking resources,
+> as well as high-level components like DNS entries and SaaS features.
+
+why?
+
+- All in one place infra;it's simple
+- collaboration eg push code to gh
+- reproducibility
+- ensure resources are removed; prevent being charged from resources that you do not use
+
+Key terraform commands -
+
+- init
+- plan
+- apply
+- destroy
+
+![terraform commands](key-terraform-commands.png)
+
+Service account to be used by program. Assign roles to service accounts. Keys must be **private**!
